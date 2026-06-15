@@ -3,7 +3,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
 
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -57,7 +57,7 @@ app = FastAPI(title="Todo API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -238,3 +238,28 @@ def delete_file(file_id: int, db: Session = Depends(get_db)):
 async def test_sentry():
     result = 1 / 0
     return {"result": result}
+
+async def get_current_user(request: Request):
+    return {"id": 123, "email": "user@example.com", "role": "student"}
+
+@app.get("/courses/{course_id}/lessons")
+async def get_lessons(
+    course_id: int,
+    request: Request,
+    user: dict = Depends(get_current_user),
+):
+    sentry_sdk.set_user(
+        {
+            "id": user["id"],
+            "email": user["email"],
+            "role": user["role"],
+        }
+    )
+
+    sentry_sdk.set_context(
+        key="request_info",
+        value={
+            "course_id": course_id,
+            "ip": request.headers.get("X-Real-IP", request.client.host)
+        }
+    )

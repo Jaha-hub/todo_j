@@ -20,18 +20,17 @@ services:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15
+    container_name: postgres
+    restart: always
     environment:
       POSTGRES_USER: todo
       POSTGRES_PASSWORD: todo
       POSTGRES_DB: tododb
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U todo -d tododb" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   minio:
     image: minio/minio:latest
@@ -52,15 +51,13 @@ services:
 
   backend:
     build: ./backend
+    container_name: backend
     ports:
       - "8000:8000"
     env_file:
       - .env
     depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
+      - postgres
 
   frontend:
     build: ./frontend
