@@ -1,3 +1,8 @@
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
+
+
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -11,11 +16,22 @@ import os
 
 from database import get_db, init_db, Todo, TodoFile
 
+
+
 S3_ENDPOINT = os.getenv("S3_ENDPOINT", "http://localhost:9000")
 S3_PUBLIC_ENDPOINT = os.getenv("S3_PUBLIC_ENDPOINT", "http://localhost:9000")
 S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "minioadmin")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "minioadmin")
 S3_BUCKET = os.getenv("S3_BUCKET", "todo-files")
+
+SENTRY_DSN = os.getenv("SENTRY_DSN", None)
+SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT", None)
+
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    environment=SENTRY_ENVIRONMENT,
+
+)
 
 s3 = boto3.client(
     "s3",
