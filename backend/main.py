@@ -30,7 +30,13 @@ SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT", None)
 sentry_sdk.init(
     dsn=SENTRY_DSN,
     environment=SENTRY_ENVIRONMENT,
-
+    # 0.0  1.0  100%
+    traces_sample_rate=1.0,
+    profiles_sample_rate=0.1,
+    integrations=[
+        StarletteIntegration(),
+        FastApiIntegration(),
+    ]
 )
 
 s3 = boto3.client(
@@ -227,3 +233,8 @@ def delete_file(file_id: int, db: Session = Depends(get_db)):
         pass
     db.delete(todo_file)
     db.commit()
+
+@app.get("/test-sentry")
+async def test_sentry():
+    result = 1 / 0
+    return {"result": result}
